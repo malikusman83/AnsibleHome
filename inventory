@@ -1,4 +1,10 @@
+[web_servers]
 10.0.200.4
-10.0.200.28
 10.0.200.21
+
+[db_servers]
+10.0.200.28
+
+[file_servers]
+10.0.200.4
 #can use hostname when DNS is available and FQDN

@@ -1,0 +1,17 @@
+---
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: install apache and php package
+    package:
+      name:
+        - "{{ apache_package }}"
+        - "{{ php_package }}"
+      state: latest
+      update_cache: yes
+
+
+# to use the variable apache_package, php_package set the value of variable in front of each host in the inventory file
+# for CentOS server we use the following ex: 10.0.200.2 apache_package=httpd php_package=php
