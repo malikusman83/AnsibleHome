@@ -7,4 +7,7 @@
 
 [file_servers]
 10.0.200.4
+
+[workstations]
+10.0.200.207
 #can use hostname when DNS is available and FQDN

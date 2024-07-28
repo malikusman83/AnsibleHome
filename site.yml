@@ -7,16 +7,43 @@
   - name: install updates (CentOS)
     tags: always
     dnf:
-      update_only: yes
       update_cache: yes
+    changed_when: false
     when: ansible_distribution == "CentOS"
 
   - name: install updates (Ubuntu)
     tags: always
     apt:
-      upgrade: dist
       update_cache: yes
+    changed_when: false
     when: ansible_distribution == "Ubuntu"
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: add ssh key for simone
+    tags: always
+    authorized_key:
+      user: simone
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBqQ7EvJEy8q8WWm2wwcUXO+Vv2dayNEtu9Jx2+fP3DE ansible"
+
+- hosts: workstations
+  become: true
+  tasks:
+
+  - name: install unzip
+    package:
+      name: unzip
+
+  - name: install terraform
+    unarchive:
+      src: https://releases.hashicorp.com/terraform/1.9.2/terraform_1.9.2_linux_amd64.zip
+      dest: /usr/local/bin
+      remote_src: yes
+      mode: 0755
+      owner: root
+      group: root
 
 - hosts: web_servers
   become: true
@@ -38,6 +65,60 @@
         - httpd
         - php
       state: latest
+    when: ansible_distribution == "CentOS"
+
+  - name: start httpd (CentOS)
+    tags: apache,centos,httpd
+    service:
+      name: httpd
+      state: started
+      enabled: yes
+    when: ansible_distribution == "CentOS"
+
+  - name: change e-mail address for admin
+    tags: apache,centos,httpd
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^ServerAdmin'
+      line: ServerAdmin somebody@somewhere.net
+    when: ansible_distribution == "CentOS"
+    register: httpd
+
+
+  - name: change ServerName for the Server (CentOS)
+    tags: apache,centos,httpd
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^#ServerName'
+      line: ServerName 10.0.200.21
+    when: ansible_distribution == "CentOS"
+    register: httpd
+
+  -  name: restart httpd (CentOS)
+     tags: apache.centos,httpd
+     service:
+       name: httpd
+       state: restarted
+     when: httpd.changed
+
+  - name: Allow HTTP traffic through firewall
+    firewalld:
+      service: http
+      permanent: yes
+      state: enabled
+    when: ansible_distribution == "CentOS"
+
+  - name: Allow HTTPS traffic through firewall
+    firewalld:
+      service: https
+      permanent: yes
+      state: enabled
+    when: ansible_distribution == "CentOS"
+
+  - name: Reload firewalld to apply changes
+    ansible.builtin.service:
+      name: firewalld
+      state: reloaded
     when: ansible_distribution == "CentOS"
 
   - name: copy default html file for site
